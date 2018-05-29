@@ -17,6 +17,7 @@ rect {
 
 </style>
 <body>
+<svg></svg>
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script>
 
@@ -32,7 +33,7 @@ var force = d3.layout.force()
     .charge(-600)
     .on("tick", tick);
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("svg")
     .attr("width", width)
     .attr("height", height);
 
