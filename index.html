@@ -38,7 +38,9 @@
     <script>
       const entities = {},
             width = Math.max(window.innerWidth - 200, 200),
-            height = Math.max(window.innerHeight - 200, 200);
+            height = Math.max(window.innerHeight - 200, 200),
+            subjectsInput = document.getElementById("subjects"),
+            predicateInput = document.getElementById("predicate");
 
       let force, svg, nodes, nodesById, links, node, link;
 
@@ -47,9 +49,7 @@
       init();
 
       function init() {
-        const params = new URLSearchParams(document.location.search),
-              subjectsInput = document.getElementById("subjects"),
-              predicateInput = document.getElementById("predicate");
+        const params = new URLSearchParams(document.location.search);
         if (params.has('subjects')) {
           subjectsInput.value = params.get('subjects');
         }
@@ -62,9 +62,7 @@
       }
 
       function onSubmit(event) {
-        const subjectsInput = document.getElementById("subjects"),
-              predicateInput = document.getElementById("predicate"),
-              subjects = subjectsInput.value.split(","),
+        const subjects = subjectsInput.value.split(","),
               predicate = predicateInput.value;
         start(subjects, predicate);
         updateParams(subjects, predicate);
