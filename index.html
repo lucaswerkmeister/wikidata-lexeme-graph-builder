@@ -1,157 +1,162 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<style>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
 
-rect {
-  fill: none;
-  pointer-events: all;
-}
+      rect {
+          fill: none;
+          pointer-events: all;
+      }
 
-.node {
-  fill: #000;
-}
+      .node {
+          fill: #000;
+      }
 
-.link {
-  stroke: #999;
-}
+      .link {
+          stroke: #999;
+      }
 
-</style>
-<body>
-<svg></svg>
-<script src="https://d3js.org/d3.v3.min.js"></script>
-<script>
+    </style>
+  </head>
+  <body>
+    <svg></svg>
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script>
 
-var width = 960,
-height = 500;
+      var width = 960,
+          height = 500;
 
-var fill = d3.scale.category20();
+      var fill = d3.scale.category20();
 
-var force = d3.layout.force()
-    .size([width, height])
-    .nodes([])
-    .linkDistance(70)
-    .charge(-600)
-    .on("tick", tick);
+      var force = d3.layout.force()
+          .size([width, height])
+          .nodes([])
+          .linkDistance(70)
+          .charge(-600)
+          .on("tick", tick);
 
-var svg = d3.select("svg")
-    .attr("width", width)
-    .attr("height", height);
+      var svg = d3.select("svg")
+          .attr("width", width)
+          .attr("height", height);
 
-svg.append("rect")
-  .attr("width", width)
-  .attr("height", height);
+      svg.append("rect")
+        .attr("width", width)
+        .attr("height", height);
 
-var nodes = force.nodes(),
-    nodesById = {},
-    links = force.links(),
-    node = svg.selectAll(".node"),
-    link = svg.selectAll(".link");
+      var nodes = force.nodes(),
+          nodesById = {},
+          links = force.links(),
+          node = svg.selectAll(".node"),
+          link = svg.selectAll(".link");
 
-const entities = {};
+      const entities = {};
 
-getTriples(
-  ['L129'],
-  'P5191',
-  (s, p, o) => {
-    console.log('%s %s %s', s, p, o);
-    const source = getNode(s),
-          target = getNode(o);
-    links.push({source: source, target: target});
-    restart();
-  },
-  restart
-);
+      getTriples(
+        ['L129'],
+        'P5191',
+        (s, p, o) => {
+          console.log('%s %s %s', s, p, o);
+          const source = getNode(s),
+                target = getNode(o);
+          links.push({source: source, target: target});
+          restart();
+        },
+        restart
+      );
 
-function tick() {
-  link.attr("x1", function(d) { return d.source.x; })
-    .attr("y1", function(d) { return d.source.y; })
-    .attr("x2", function(d) { return d.target.x; })
-    .attr("y2", function(d) { return d.target.y; });
+      function tick() {
+        link.attr("x1", function(d) { return d.source.x; })
+          .attr("y1", function(d) { return d.source.y; })
+          .attr("x2", function(d) { return d.target.x; })
+          .attr("y2", function(d) { return d.target.y; });
 
-  node.attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; });
-}
+        node.attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; });
+      }
 
-function restart() {
-  link = link.data(links);
+      function restart() {
+        link = link.data(links);
 
-  link.enter().insert("line", ".node")
-    .attr("class", "link");
+        link.enter().insert("line", ".node")
+          .attr("class", "link");
 
-  node = node.data(Object.values(nodes));
+        node = node.data(Object.values(nodes));
 
-  node.enter().append("g")
-    .attr("class", "node")
-    .call(force.drag);
-  node.append("circle")
-    .attr("r", 5);
-  node.append("text")
-    .attr("dx", 12)
-    .attr("dy", ".35em")
-    .text(function(d) { return getFirstLemma(d.entityId); });
+        node.enter().append("g")
+          .attr("class", "node")
+          .call(force.drag);
+        node.append("circle")
+          .attr("r", 5);
+        node.append("text")
+          .attr("dx", 12)
+          .attr("dy", ".35em")
+          .text(function(d) { return getFirstLemma(d.entityId); });
 
-  force.start();
-}
+        force.start();
+      }
 
-function getTriples(subjects, predicate, callbackTriple, callbackDone) {
-  getEntities(getNewEntityIds(subjects)).then(response => {
-    const nextSubjects = [];
-    for (const entityId in response.entities) {
-      const entity = response.entities[entityId];
-      entities[entityId] = entity;
-      if (predicate in entity.claims) {
-        for (const statement of entity.claims[predicate]) {
-          const object = statement.mainsnak.datavalue.value.id;
-          nextSubjects.push(object);
-          callbackTriple(entityId, predicate, object);
+      function getTriples(subjects, predicate, callbackTriple, callbackDone) {
+        getEntities(getNewEntityIds(subjects)).then(response => {
+          const nextSubjects = [];
+          for (const entityId in response.entities) {
+            const entity = response.entities[entityId];
+            entities[entityId] = entity;
+            if (predicate in entity.claims) {
+              for (const statement of entity.claims[predicate]) {
+                const object = statement.mainsnak.datavalue.value.id;
+                nextSubjects.push(object);
+                callbackTriple(entityId, predicate, object);
+              }
+            }
+          }
+          if (nextSubjects.length > 0) {
+            getTriples(nextSubjects, predicate, callbackTriple, callbackDone);
+          } else {
+            callbackDone();
+          }
+        });
+      }
+
+      function getNewEntityIds(entityIds) {
+        return entityIds.filter(entityId => !(entityId in entities));
+      }
+
+      function getEntities(entityIds) {
+        const url = 'https://www.wikidata.org/w/api.php?' +
+              'action=wbgetentities&' +
+              'ids=' + entityIds.join('|') + '&' +
+              'origin=*&' +
+              'format=json&formatversion=2',
+              init = {
+                mode: 'cors',
+                credentials: 'omit'
+              };
+        return fetch(url, init).then(response => response.json()).catch(console.error);
+      }
+
+      function getFirstLemma(entityId) {
+        if (entityId in entities) {
+          for (const lemma of Object.values(entities[entityId].lemmas)) {
+            return lemma.value;
+          }
+        } else {
+          return "";
         }
       }
-    }
-    if (nextSubjects.length > 0) {
-      getTriples(nextSubjects, predicate, callbackTriple, callbackDone);
-    } else {
-      callbackDone();
-    }
-  });
-}
 
-function getNewEntityIds(entityIds) {
-  return entityIds.filter(entityId => !(entityId in entities));
-}
+      function getNode(entityId) {
+        let node = nodesById[entityId];
+        if (typeof node === 'undefined') {
+          nodesById[entityId] = node = {
+            entityId: entityId,
+            x: width / 2,
+            y: height / 2
+          };
+          nodes.push(node);
+        }
+        return node;
+      }
 
-function getEntities(entityIds) {
-  const url = 'https://www.wikidata.org/w/api.php?' +
-        'action=wbgetentities&' +
-        'ids=' + entityIds.join('|') + '&' +
-        'origin=*&' +
-        'format=json&formatversion=2',
-        init = {
-          mode: 'cors',
-          credentials: 'omit'
-        };
-  return fetch(url, init).then(response => response.json()).catch(console.error);
-}
-
-function getFirstLemma(entityId) {
-  if (entityId in entities) {
-    for (const lemma of Object.values(entities[entityId].lemmas)) {
-      return lemma.value;
-    }
-  } else {
-    return "";
-  }
-}
-
-function getNode(entityId) {
-  let node = nodesById[entityId];
-  if (typeof node === 'undefined') {
-    nodesById[entityId] = node = {
-      entityId: entityId,
-      x: width / 2,
-      y: height / 2
-    };
-    nodes.push(node);
-  }
-  return node;
-}
-
-</script>
+    </script>
+  </body>
+</html>
