@@ -145,6 +145,7 @@
         node.enter().append("g")
           .attr("class", "node")
           .call(force.drag);
+        node.selectAll("*").remove();
         node.append("circle")
           .attr("r", 5);
         node.append("text")
