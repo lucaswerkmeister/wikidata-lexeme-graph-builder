@@ -34,14 +34,43 @@
 
       let force, svg, nodes, nodesById, links, node, link;
 
-      document.getElementById("form").addEventListener("submit", function(event) {
+      document.getElementById("form").addEventListener("submit", onSubmit);
+
+      init();
+
+      function init() {
+        const params = new URLSearchParams(document.location.search),
+              subjectsInput = document.getElementById("subjects"),
+              predicateInput = document.getElementById("predicate");
+        if (params.has('subjects')) {
+          subjectsInput.value = params.get('subjects');
+        }
+        if (params.has('predicate')) {
+          predicateInput.value = params.get('predicate');
+        }
+        if (subjectsInput.value && predicateInput.value) {
+          onSubmit();
+        }
+      }
+
+      function onSubmit(event) {
         const subjectsInput = document.getElementById("subjects"),
               predicateInput = document.getElementById("predicate"),
               subjects = subjectsInput.value.split(","),
               predicate = predicateInput.value;
         start(subjects, predicate);
-        event.preventDefault();
-      });
+        updateParams(subjects, predicate);
+        if (event) {
+          event.preventDefault();
+        }
+      }
+
+      function updateParams(subjects, predicate) {
+        const params = new URLSearchParams(document.location.search);
+        params.set('subjects', subjects.join(','));
+        params.set('predicate', predicate);
+        history.pushState(null, '', '?' + params.toString());
+      }
 
       function start(subjects, predicate) {
         force = d3.layout.force()
