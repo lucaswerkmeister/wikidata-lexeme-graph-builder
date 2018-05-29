@@ -20,6 +20,11 @@
     </style>
   </head>
   <body>
+    <form id="form">
+      <input id="subjects" type="text" required pattern="[QPL][1-9][0-9]*(?:,[QPL][1-9][0-9]*)*" placeholder="L88,L129">
+      <input id="predicate" type="text" required pattern="P[1-9][0-9]*" placeholder="P5191">
+      <button id="start">Start</button>
+    </form>
     <svg></svg>
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script>
@@ -29,7 +34,14 @@
 
       let force, svg, nodes, nodesById, links, node, link;
 
-      start(['L129'], 'P5191');
+      document.getElementById("form").addEventListener("submit", function(event) {
+        const subjectsInput = document.getElementById("subjects"),
+              predicateInput = document.getElementById("predicate"),
+              subjects = subjectsInput.value.split(","),
+              predicate = predicateInput.value;
+        start(subjects, predicate);
+        event.preventDefault();
+      });
 
       function start(subjects, predicate) {
         force = d3.layout.force()
