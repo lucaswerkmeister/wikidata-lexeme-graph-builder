@@ -106,7 +106,6 @@
           subjects,
           predicate,
           (s, p, o) => {
-            console.log('%s %s %s', s, p, o);
             const source = getNode(s),
                   target = getNode(o);
             links.push({source: source, target: target});
