@@ -29,8 +29,8 @@
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script>
       const entities = {},
-            width = 960,
-            height = 500;
+            width = Math.max(window.innerWidth - 200, 200),
+            height = Math.max(window.innerHeight - 200, 200);
 
       let force, svg, nodes, nodesById, links, node, link;
 
