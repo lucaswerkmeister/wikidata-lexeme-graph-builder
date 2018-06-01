@@ -16,6 +16,7 @@
 
       .link {
           stroke: #999;
+          marker-end: url(#arrow);
       }
 
     </style>
@@ -33,7 +34,13 @@
       <strong>This website requires JavaScript.</strong>
     </noscript>
     <a href="https://github.com/lucaswerkmeister/wikidata-lexeme-graph-builder/"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
-    <svg></svg>
+    <svg>
+      <defs>
+        <marker id="arrow" viewBox="0 0 2 2" refX="3" refY="1" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 2 1 L 0 2 z"/>
+        </marker>
+      </defs>
+    </svg>
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script>
       const entities = {},
@@ -116,7 +123,7 @@
       }
 
       function reset() {
-        svg.selectAll("*").remove();
+        svg.selectAll("rect, .node, .link").remove();
         for (key in entities) {
           delete entities[key];
         }
