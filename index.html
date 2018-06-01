@@ -182,16 +182,29 @@
       }
 
       function getEntities(entityIds) {
-        const url = 'https://www.wikidata.org/w/api.php?' +
-              'action=wbgetentities&' +
-              'ids=' + entityIds.join('|') + '&' +
-              'origin=*&' +
-              'format=json&formatversion=2',
+        const fetches = [],
               init = {
                 mode: 'cors',
                 credentials: 'omit'
               };
-        return fetch(url, init).then(response => response.json()).catch(console.error);
+        let someEntityIds;
+        while ((someEntityIds = entityIds.splice(0, 50)).length > 0) {
+          const url = 'https://www.wikidata.org/w/api.php?' +
+                'action=wbgetentities&' +
+                'ids=' + someEntityIds.join('|') + '&' +
+                'origin=*&' +
+                'format=json&formatversion=2';
+          fetches.push(fetch(url, init).then(response => response.json()));
+        }
+        return Promise.all(fetches).then(responses => {
+          const entities = {};
+          for (const response of responses) {
+            for (const entityId in response.entities) {
+              entities[entityId] = response.entities[entityId];
+            }
+          }
+          return { entities };
+        }).catch(console.error);
       }
 
       function getSomeTerm(entityId) {
