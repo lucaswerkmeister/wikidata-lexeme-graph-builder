@@ -112,23 +112,13 @@
         getTriples(
           subjects,
           predicate,
-          (s, p, o) => {
-            const source = getNode(s),
-                  target = getNode(o);
-            links.push({source: source, target: target});
-            restart();
-          },
+          addTriple,
           restart
         );
         getInverseTriples(
           subjects,
           predicate,
-          (s, p, o) => {
-            const source = getNode(s),
-                  target = getNode(o);
-            links.push({source: source, target: target});
-            restart();
-          },
+          addTriple,
           restart
         );
       }
@@ -144,6 +134,13 @@
           .attr("y2", function(d) { return d.target.y; });
 
         node.attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; });
+      }
+
+      function addTriple(subject, predicate, object) {
+        const source = getNode(subject),
+              target = getNode(object);
+        links.push({source: source, target: target});
+        restart();
       }
 
       function restart() {
