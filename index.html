@@ -124,9 +124,6 @@
 
       function reset() {
         svg.selectAll("rect, .node, .link").remove();
-        for (key in entities) {
-          delete entities[key];
-        }
       }
 
       function tick() {
@@ -164,12 +161,12 @@
         force.start();
       }
 
-      function getTriples(subjects, predicate, callbackTriple, callbackDone) {
-        getEntities(getNewEntityIds(subjects)).then(response => {
+      function getTriples(subjects, predicate, callbackTriple, callbackDone, visitedSubjects = new Set()) {
+        getEntities(getNewEntityIds(subjects, visitedSubjects)).then(response => {
           const nextSubjects = [];
           for (const entityId in response.entities) {
             const entity = response.entities[entityId];
-            entities[entityId] = entity;
+            visitedSubjects.add(entityId);
             if (predicate in entity.claims) {
               for (const statement of entity.claims[predicate]) {
                 const object = statement.mainsnak.datavalue.value.id;
@@ -186,18 +183,19 @@
         });
       }
 
-      function getNewEntityIds(entityIds) {
-        return entityIds.filter(entityId => !(entityId in entities));
+      function getNewEntityIds(entityIds, visitedEntityIds) {
+        return entityIds.filter(entityId => !visitedEntityIds.has(entityId));
       }
 
       function getEntities(entityIds) {
-        const fetches = [],
+        const unknownEntityIds = entityIds.filter(entityId => !(entityId in entities)),
+              fetches = [],
               init = {
                 mode: 'cors',
                 credentials: 'omit'
               };
         let someEntityIds;
-        while ((someEntityIds = entityIds.splice(0, 50)).length > 0) {
+        while ((someEntityIds = unknownEntityIds.splice(0, 50)).length > 0) {
           const url = 'https://www.wikidata.org/w/api.php?' +
                 'action=wbgetentities&' +
                 'ids=' + someEntityIds.join('|') + '&' +
@@ -205,14 +203,18 @@
                 'format=json&formatversion=2';
           fetches.push(fetch(url, init).then(response => response.json()));
         }
+
         return Promise.all(fetches).then(responses => {
-          const entities = {};
           for (const response of responses) {
             for (const entityId in response.entities) {
               entities[entityId] = response.entities[entityId];
             }
           }
-          return { entities };
+          const requestedEntities = {};
+          for (const entityId of entityIds) {
+            requestedEntities[entityId] = entities[entityId];
+          }
+          return { entities: requestedEntities };
         }).catch(console.error);
       }
 
