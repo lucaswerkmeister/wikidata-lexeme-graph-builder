@@ -189,19 +189,13 @@
 
       function getEntities(entityIds) {
         const unknownEntityIds = entityIds.filter(entityId => !(entityId in entities)),
-              fetches = [],
-              init = {
-                mode: 'cors',
-                credentials: 'omit'
-              };
+              fetches = [];
         let someEntityIds;
         while ((someEntityIds = unknownEntityIds.splice(0, 50)).length > 0) {
-          const url = 'https://www.wikidata.org/w/api.php?' +
-                'action=wbgetentities&' +
-                'ids=' + someEntityIds.join('|') + '&' +
-                'origin=*&' +
-                'format=json&formatversion=2';
-          fetches.push(fetch(url, init).then(response => response.json()));
+          fetches.push(apiRequest(
+            'action=wbgetentities',
+            'ids=' + someEntityIds.join('|')
+          ));
         }
 
         return Promise.all(fetches).then(responses => {
@@ -216,6 +210,18 @@
           }
           return { entities: requestedEntities };
         }).catch(console.error);
+      }
+
+      function apiRequest(...params) {
+        const init = {
+          mode: 'cors',
+          credentials: 'omit'
+        };
+        const url = 'https://www.wikidata.org/w/api.php?' +
+              params.join('&') + '&' +
+              'origin=*&' +
+              'format=json&formatversion=2';
+        return fetch(url, init).then(response => response.json());
       }
 
       function getSomeTerm(entityId) {
