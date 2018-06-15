@@ -120,6 +120,17 @@
           },
           restart
         );
+        getInverseTriples(
+          subjects,
+          predicate,
+          (s, p, o) => {
+            const source = getNode(s),
+                  target = getNode(o);
+            links.push({source: source, target: target});
+            restart();
+          },
+          restart
+        );
       }
 
       function reset() {
@@ -185,6 +196,70 @@
 
       function getNewEntityIds(entityIds, visitedEntityIds) {
         return entityIds.filter(entityId => !visitedEntityIds.has(entityId));
+      }
+
+      function getInverseTriples(objects, predicate, callbackTriple, callbackDone, visitedObjects = new Set()) {
+        const requests = [];
+        for (const entityId of getNewEntityIds(objects, visitedObjects)) {
+          requests.push(apiRequest(
+            'action=query',
+            'list=backlinks',
+            'bltitle=' + entityId2title(entityId),
+            'blnamespace=0|120|146'
+          ));
+        }
+        Promise.all(requests).then(responses => {
+          const entityIds = [];
+          for (const response of responses) {
+            for (const backlink of response.query.backlinks) {
+              const entityId = title2entityId(backlink.title);
+              entityIds.push(entityId);
+            }
+          }
+          getEntities(entityIds).then(response => {
+            const nextObjects = [];
+            for (const entityId in response.entities) {
+              const subject = response.entities[entityId];
+              if (predicate in subject.claims) {
+                for (const statement of subject.claims[predicate]) {
+                  const object = statement.mainsnak.datavalue.value.id;
+                  if (objects.indexOf(object) >= 0) {
+                    nextObjects.push(subject.id);
+                    callbackTriple(entityId, predicate, object);
+                  }
+                }
+              }
+            }
+            if (nextObjects.length > 0) {
+              getInverseTriples(nextObjects, predicate, callbackTriple, callbackDone, visitedObjects);
+            } else {
+              callbackDone();
+            }
+          }).catch(console.error);
+        }).catch(console.error);
+      }
+
+      function entityId2title(entityId) {
+        switch (entityId[0]) {
+        case 'Q': return entityId;
+        case 'P': return `Property:${entityId}`;
+        case 'L': return `Lexeme:${entityId}`;
+        default: throw new RangeError(`Unknown entity ID type: ${entityId}`);
+        }
+      }
+
+      function title2entityId(title) {
+        let match;
+        if ((match = title.match(/^Lexeme:(L[1-9][0-9]*)$/)) !== null) {
+          return match[1];
+        }
+        if ((match = title.match(/^Property:(P[1-9][0-9]*)$/)) !== null) {
+          return match[1];
+        }
+        if ((match = title.match(/^(Q[1-9][0-9]*)$/)) !== null) {
+          return match[1];
+        }
+        throw new RangeError(`Unknown entity ID title: ${title}`);
       }
 
       function getEntities(entityIds) {
