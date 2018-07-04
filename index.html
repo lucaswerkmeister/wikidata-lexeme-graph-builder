@@ -324,7 +324,16 @@
               params.map(s => s.replace(/#/g, encodeURIComponent)).join('&') + '&' +
               'origin=*&' +
               'format=json&formatversion=2';
-        return fetch(url, init).then(response => response.json());
+        return fetch(url, init).then(response => response.json().then(body => {
+            if ('error' in body) {
+              if (body.error.code === 'maxlag' && response.headers.has('Retry-After')) {
+                setTimeout(() => apiRequest.apply(this, params), response.headers.get('Retry-After') * 1000);
+              } else {
+                throw body.error;
+              }
+            }
+            return body;
+          }));
       }
 
       function getSomeTerm(entityId) {
