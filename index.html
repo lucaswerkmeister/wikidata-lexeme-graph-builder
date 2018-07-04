@@ -219,6 +219,11 @@
               entityIds.push(entityId);
             }
           }
+          for (const object of objects) {
+            if (entityIds.indexOf(object) < 0) {
+              entityIds.push(object);
+            }
+          }
           getEntities(entityIds).then(addSubentities).then(response => {
             const nextObjects = [];
             for (const entityId in response.entities) {
