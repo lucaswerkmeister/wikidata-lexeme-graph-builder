@@ -219,7 +219,7 @@
               entityIds.push(entityId);
             }
           }
-          getEntities(entityIds).then(response => {
+          getEntities(entityIds).then(addSubentities).then(response => {
             const nextObjects = [];
             for (const entityId in response.entities) {
               const subject = response.entities[entityId];
@@ -265,6 +265,18 @@
           return match[1];
         }
         throw new RangeError(`Unknown entity ID title: ${title}`);
+      }
+
+      function addSubentities(response) {
+        for (const entityId in response.entities) {
+          const entity = response.entities[entityId];
+          if ('forms' in entity) {
+            for (const form of entity.forms) {
+              response.entities[form.id] = form;
+            }
+          }
+        }
+        return response;
       }
 
       function getEntities(entityIds) {
