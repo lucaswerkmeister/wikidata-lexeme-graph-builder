@@ -26,8 +26,8 @@
     <form id="form">
       <label for="subjects">Root entities</label>
       <input id="subjects" type="text" required pattern="[QPL][1-9][0-9]*(?:,[QPL][1-9][0-9]*)*" placeholder="L88,L129">
-      <label for="predicate">Link property</label>
-      <input id="predicate" type="text" required pattern="P[1-9][0-9]*" placeholder="P5191">
+      <label for="predicates">Link property</label>
+      <input id="predicates" type="text" required pattern="P[1-9][0-9]*(?:,P[1-9][0-9]*)*" placeholder="P5191">
       <button id="start">Start</button>
     </form>
     <noscript>
@@ -47,7 +47,7 @@
             width = Math.max(window.innerWidth - 200, 200),
             height = Math.max(window.innerHeight - 200, 200),
             subjectsInput = document.getElementById("subjects"),
-            predicateInput = document.getElementById("predicate");
+            predicatesInput = document.getElementById("predicates");
 
       let force, svg, nodes, nodesById, links, node, link;
 
@@ -60,32 +60,34 @@
         if (params.has('subjects')) {
           subjectsInput.value = params.get('subjects');
         }
-        if (params.has('predicate')) {
-          predicateInput.value = params.get('predicate');
+        if (params.has('predicates')) {
+          predicatesInput.value = params.get('predicates');
+        } else if (params.has('predicate')) { // backwards compatibility
+          predicatesInput.value = params.get('predicate');
         }
-        if (subjectsInput.value && predicateInput.value) {
+        if (subjectsInput.value && predicatesInput.value) {
           onSubmit();
         }
       }
 
       function onSubmit(event) {
         const subjects = subjectsInput.value.split(","),
-              predicate = predicateInput.value;
-        start(subjects, predicate);
-        updateParams(subjects, predicate);
+              predicates = predicatesInput.value.split(",");
+        start(subjects, predicates);
+        updateParams(subjects, predicates);
         if (event) {
           event.preventDefault();
         }
       }
 
-      function updateParams(subjects, predicate) {
+      function updateParams(subjects, predicates) {
         const params = new URLSearchParams(document.location.search);
         params.set('subjects', subjects.join(','));
-        params.set('predicate', predicate);
+        params.set('predicates', predicates.join(','));
         history.pushState(null, '', '?' + params.toString());
       }
 
-      function start(subjects, predicate) {
+      function start(subjects, predicates) {
         force = d3.layout.force()
           .size([width, height])
           .nodes([])
@@ -111,13 +113,13 @@
 
         getTriples(
           subjects,
-          predicate,
+          predicates,
           addTriple,
           restart
         );
         getInverseTriples(
           subjects,
-          predicate,
+          predicates,
           addTriple,
           restart
         );
@@ -169,22 +171,24 @@
         force.start();
       }
 
-      function getTriples(subjects, predicate, callbackTriple, callbackDone, visitedSubjects = new Set()) {
+      function getTriples(subjects, predicates, callbackTriple, callbackDone, visitedSubjects = new Set()) {
         getEntities(getNewEntityIds(subjects, visitedSubjects)).then(response => {
           const nextSubjects = [];
           for (const entityId in response.entities) {
             const entity = response.entities[entityId];
             visitedSubjects.add(entityId);
-            if (predicate in entity.claims) {
-              for (const statement of entity.claims[predicate]) {
-                const object = statement.mainsnak.datavalue.value.id;
-                nextSubjects.push(object);
-                callbackTriple(entityId, predicate, object);
+            for (const predicate of predicates) {
+              if (predicate in entity.claims) {
+                for (const statement of entity.claims[predicate]) {
+                  const object = statement.mainsnak.datavalue.value.id;
+                  nextSubjects.push(object);
+                  callbackTriple(entityId, predicate, object);
+                }
               }
             }
           }
           if (nextSubjects.length > 0) {
-            getTriples(nextSubjects, predicate, callbackTriple, callbackDone);
+            getTriples(nextSubjects, predicates, callbackTriple, callbackDone);
           } else {
             callbackDone();
           }
@@ -195,7 +199,7 @@
         return entityIds.filter(entityId => !visitedEntityIds.has(entityId));
       }
 
-      function getInverseTriples(objects, predicate, callbackTriple, callbackDone, visitedObjects = new Set()) {
+      function getInverseTriples(objects, predicates, callbackTriple, callbackDone, visitedObjects = new Set()) {
         const requests = [];
         for (const entityId of getNewEntityIds(objects, visitedObjects)) {
           requests.push(apiRequest(
@@ -217,18 +221,20 @@
             const nextObjects = [];
             for (const entityId in response.entities) {
               const subject = response.entities[entityId];
-              if (predicate in subject.claims) {
-                for (const statement of subject.claims[predicate]) {
-                  const object = statement.mainsnak.datavalue.value.id;
-                  if (objects.indexOf(object) >= 0) {
-                    nextObjects.push(subject.id);
-                    callbackTriple(entityId, predicate, object);
+              for (const predicate of predicates) {
+                if (predicate in subject.claims) {
+                  for (const statement of subject.claims[predicate]) {
+                    const object = statement.mainsnak.datavalue.value.id;
+                    if (objects.indexOf(object) >= 0) {
+                      nextObjects.push(subject.id);
+                      callbackTriple(entityId, predicate, object);
+                    }
                   }
                 }
               }
             }
             if (nextObjects.length > 0) {
-              getInverseTriples(nextObjects, predicate, callbackTriple, callbackDone, visitedObjects);
+              getInverseTriples(nextObjects, predicates, callbackTriple, callbackDone, visitedObjects);
             } else {
               callbackDone();
             }
