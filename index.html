@@ -253,15 +253,21 @@
         switch (entityId[0]) {
         case 'Q': return entityId;
         case 'P': return `Property:${entityId}`;
-        case 'L': return `Lexeme:${entityId}`;
+        case 'L':
+          const match = entityId.match(/^(L[1-9][0-9]*)-(F[1-9][0-9]*)$/);
+          if (match !== null) {
+            return `Lexeme:${match[1]}#${match[1]}-${match[2]}`;
+          } else {
+            return `Lexeme:${entityId}`;
+          }
         default: throw new RangeError(`Unknown entity ID type: ${entityId}`);
         }
       }
 
       function title2entityId(title) {
         let match;
-        if ((match = title.match(/^Lexeme:(L[1-9][0-9]*)$/)) !== null) {
-          return match[1];
+        if ((match = title.match(/^Lexeme:((L[1-9][0-9]*)(?:#(\2-F[1-9][0-9]*))?)$/)) !== null) {
+          return match[3] || match[2];
         }
         if ((match = title.match(/^Property:(P[1-9][0-9]*)$/)) !== null) {
           return match[1];
