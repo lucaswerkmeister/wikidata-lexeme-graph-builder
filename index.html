@@ -141,7 +141,7 @@
       function addTriple(subject, predicate, object) {
         const source = getNode(subject),
               target = getNode(object);
-        links.push({source: source, target: target});
+        links.push({source: source, target: target, propertyId: predicate});
         restart();
       }
 
@@ -149,7 +149,9 @@
         link = link.data(links);
 
         link.enter().insert("line", ".node")
-          .attr("class", "link");
+          .attr("class", "link")
+          .append("title")
+          .text(function(d) { return d.propertyId; });
 
         node = node.data(Object.values(nodes));
 
