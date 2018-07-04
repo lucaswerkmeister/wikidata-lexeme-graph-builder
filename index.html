@@ -311,6 +311,10 @@
             for (const lemma of Object.values(entity.lemmas)) {
               return lemma;
             }
+          } else if ('representations' in entity) {
+            for (const representation of Object.values(entity.representations)) {
+              return representation;
+            }
           } else if ('labels' in entity) {
             if ('en' in entity.labels) {
               return entity.labels.en;
