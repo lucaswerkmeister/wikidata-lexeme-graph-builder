@@ -130,12 +130,12 @@
       }
 
       function tick() {
-        link.attr("x1", function(d) { return d.source.x; })
-          .attr("y1", function(d) { return d.source.y; })
-          .attr("x2", function(d) { return d.target.x; })
-          .attr("y2", function(d) { return d.target.y; });
+        link.attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
 
-        node.attr("transform", function(d) { return "translate(" + d.x + ", " + d.y + ")"; });
+        node.attr("transform", d => "translate(" + d.x + ", " + d.y + ")");
       }
 
       function addTriple(subject, predicate, object) {
@@ -151,7 +151,7 @@
         link.enter().insert("line", ".node")
           .attr("class", "link")
           .append("title")
-          .text(function(d) { return d.propertyId; });
+          .text(d => d.propertyId);
 
         node = node.data(Object.values(nodes));
 
@@ -161,14 +161,14 @@
         node.selectAll("*").remove();
         node.append("circle")
           .attr("r", 5);
-        node.each(function(d) { d.term = getSomeTerm(d.entityId); });
+        node.each(d => d.term = getSomeTerm(d.entityId));
         node.append("a")
-          .attr("href", function(d) { return "http://www.wikidata.org/entity/" + d.entityId; })
+          .attr("href", d => "http://www.wikidata.org/entity/" + d.entityId)
           .append("text")
           .attr("dx", 12)
           .attr("dy", ".35em")
-          .attr("xml:lang", function(d) { return d.term.language; })
-          .text(function(d) { return d.term.value; });
+          .attr("xml:lang", d => d.term.language)
+          .text(d => d.term.value);
 
         force.start();
       }
