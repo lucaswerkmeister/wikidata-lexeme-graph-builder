@@ -25,7 +25,7 @@
     <h1>Wikidata Lexeme Graph Builder</h1>
     <form id="form">
       <label for="subjects">Root entities</label>
-      <input id="subjects" type="text" required pattern="[QPL][1-9][0-9]*(?:,[QPL][1-9][0-9]*)*" placeholder="L88,L129">
+      <input id="subjects" type="text" required pattern="(?:[QP][1-9][0-9]*|L[1-9][0-9]*(?:-F[1-9][0-9]*)?)(?:,(?:[QP][1-9][0-9]*|L[1-9][0-9]*(?:-F[1-9][0-9]*)?)*)*" placeholder="L88,L129">
       <label for="predicates">Link property</label>
       <input id="predicates" type="text" required pattern="P[1-9][0-9]*(?:,P[1-9][0-9]*)*" placeholder="P5191">
       <button id="start">Start</button>
