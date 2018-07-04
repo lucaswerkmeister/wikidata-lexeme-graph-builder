@@ -315,7 +315,7 @@
           credentials: 'omit'
         };
         const url = 'https://www.wikidata.org/w/api.php?' +
-              params.join('&') + '&' +
+              params.map(s => s.replace(/#/g, encodeURIComponent)).join('&') + '&' +
               'origin=*&' +
               'format=json&formatversion=2';
         return fetch(url, init).then(response => response.json());
