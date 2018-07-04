@@ -302,7 +302,7 @@
         }
 
         return Promise.all(fetches).then(responses => {
-          for (const response of responses) {
+          for (const response of responses.map(addSubentities)) {
             for (const entityId in response.entities) {
               entities[entityId] = response.entities[entityId];
             }
