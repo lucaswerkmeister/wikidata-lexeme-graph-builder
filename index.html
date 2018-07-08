@@ -18,6 +18,7 @@
           marker-end: url(#arrow);
       }
     </style>
+    <style id="style-per-property">/* populated by JS */</style>
   </head>
   <body>
     <h1>Wikidata Lexeme Graph Builder</h1>
@@ -45,7 +46,8 @@
             width = Math.max(window.innerWidth - 200, 200),
             height = Math.max(window.innerHeight - 200, 200),
             subjectsInput = document.getElementById("subjects"),
-            predicatesInput = document.getElementById("predicates");
+            predicatesInput = document.getElementById("predicates"),
+            perPropertyStyle = document.getElementById("style-per-property").sheet;
 
       let force, svg, nodes, nodesById, links, node, link;
 
@@ -104,6 +106,13 @@
           .attr("width", width)
           .attr("height", height);
 
+        if (predicates.length > 1) {
+          const scale = d3.scale.category10();
+          for (const predicate of predicates) {
+            perPropertyStyle.insertRule(`.link-${predicate} { stroke: ${scale(predicate)}; }`);
+          }
+        }
+
         nodes = force.nodes();
         nodesById = {};
         links = force.links();
@@ -126,6 +135,9 @@
 
       function reset() {
         svg.selectAll("rect, .node, .link").remove();
+        while (perPropertyStyle.cssRules.length) {
+          perPropertyStyle.deleteRule(0);
+        }
       }
 
       function tick() {
@@ -148,7 +160,7 @@
         link = link.data(links);
 
         link.enter().insert("line", ".node")
-          .attr("class", "link")
+          .attr("class", d => `link link-${d.propertyId}`)
           .append("title")
           .text(d => d.propertyId);
 
