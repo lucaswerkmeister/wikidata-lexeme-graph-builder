@@ -213,28 +213,7 @@
       }
 
       function getInverseTriples(objects, predicates, callbackTriple, callbackDone, visitedObjects = new Set()) {
-        const requests = [];
-        for (const entityId of getNewEntityIds(objects, visitedObjects)) {
-          requests.push(apiRequest(
-            'action=query',
-            'list=backlinks',
-            'bltitle=' + entityId2title(entityId),
-            'blnamespace=0|120|146'
-          ));
-        }
-        Promise.all(requests).then(responses => {
-          const entityIds = [];
-          for (const response of responses) {
-            for (const backlink of response.query.backlinks) {
-              const entityId = title2entityId(backlink.title);
-              entityIds.push(entityId);
-            }
-          }
-          for (const object of objects) {
-            if (entityIds.indexOf(object) < 0) {
-              entityIds.push(object);
-            }
-          }
+        getBacklinks(objects).then(entityIds => {
           getEntities(entityIds).then(addSubentities).then(response => {
             const nextObjects = [];
             for (const entityId in response.entities) {
@@ -258,6 +237,41 @@
             }
           }).catch(console.error);
         }).catch(console.error);
+      }
+
+      function getBacklinks(entityIds) {
+        return new Promise((resolve, reject) => {
+          let pending = 0;
+          const backlinkEntityIds = new Set(entityIds);
+          for (const entityId of entityIds) {
+            pending++;
+            const params = [
+              'action=query',
+              'list=backlinks',
+              'bltitle=' + entityId2title(entityId),
+              'blnamespace=0|120|146'
+            ];
+            function handleResponse(response) {
+              pending--;
+              for (const backlink of response.query.backlinks) {
+                const backlinkEntityId = title2entityId(backlink.title);
+                backlinkEntityIds.add(backlinkEntityId);
+              }
+              if ('continue' in response) {
+                pending++;
+                const continueParams = Array.from(params);
+                for (key in response['continue']) {
+                  continueParams.push(`${key}=${response['continue'][key]}`);
+                }
+                apiRequest(...continueParams).then(handleResponse, reject);
+              }
+              if (pending === 0) {
+                resolve(Array.from(backlinkEntityIds.values()));
+              }
+            }
+            apiRequest(...params).then(handleResponse, reject);
+          }
+        });
       }
 
       function entityId2title(entityId) {
