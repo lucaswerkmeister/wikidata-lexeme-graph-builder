@@ -249,7 +249,8 @@
               'action=query',
               'list=backlinks',
               'bltitle=' + entityId2title(entityId),
-              'blnamespace=0|120|146'
+              'blnamespace=0|120|146',
+              'bllimit=max'
             ];
             function handleResponse(response) {
               pending--;
