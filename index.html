@@ -179,7 +179,9 @@
           .attr("dx", 12)
           .attr("dy", ".35em")
           .attr("xml:lang", d => d.term.language)
-          .text(d => d.term.value);
+          .text(d => d.term.value)
+          .append("title")
+          .text(d => `${d.entityId} - ${d.term.language}`);
 
         force.start();
       }
