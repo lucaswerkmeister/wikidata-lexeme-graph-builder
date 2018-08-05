@@ -213,7 +213,11 @@
         for (const predicate of predicates) {
           if (predicate in entity.claims) {
             for (const statement of entity.claims[predicate]) {
-              const id = statement.mainsnak.datavalue.value.id;
+              const snak = statement.mainsnak;
+              if (snak.snaktype !== 'value') {
+                continue;
+              }
+              const id = snak.datavalue.value.id;
               callback(predicate, id);
             }
           }
