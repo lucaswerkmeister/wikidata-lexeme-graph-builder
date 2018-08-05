@@ -192,15 +192,10 @@
           for (const entityId in response.entities) {
             const entity = response.entities[entityId];
             visitedSubjects.add(entityId);
-            for (const predicate of predicates) {
-              if (predicate in entity.claims) {
-                for (const statement of entity.claims[predicate]) {
-                  const object = statement.mainsnak.datavalue.value.id;
-                  nextSubjects.push(object);
-                  callbackTriple(entityId, predicate, object);
-                }
-              }
-            }
+            forEntityIdStatementsWithPredicates(entity, predicates, (predicate, object) => {
+              nextSubjects.push(object);
+              callbackTriple(entityId, predicate, object);
+            });
           }
           if (nextSubjects.length > 0) {
             getTriples(nextSubjects, predicates, callbackTriple, callbackDone);
@@ -214,23 +209,29 @@
         return entityIds.filter(entityId => !visitedEntityIds.has(entityId));
       }
 
+      function forEntityIdStatementsWithPredicates(entity, predicates, callback) {
+        for (const predicate of predicates) {
+          if (predicate in entity.claims) {
+            for (const statement of entity.claims[predicate]) {
+              const id = statement.mainsnak.datavalue.value.id;
+              callback(predicate, id);
+            }
+          }
+        }
+      }
+
       function getInverseTriples(objects, predicates, callbackTriple, callbackDone, visitedObjects = new Set()) {
         getBacklinks(objects).then(entityIds => {
           getEntities(entityIds).then(addSubentities).then(response => {
             const nextObjects = [];
             for (const entityId in response.entities) {
               const subject = response.entities[entityId];
-              for (const predicate of predicates) {
-                if (predicate in subject.claims) {
-                  for (const statement of subject.claims[predicate]) {
-                    const object = statement.mainsnak.datavalue.value.id;
-                    if (objects.indexOf(object) >= 0) {
-                      nextObjects.push(subject.id);
-                      callbackTriple(entityId, predicate, object);
-                    }
-                  }
+              forEntityIdStatementsWithPredicates(subject, predicates, (predicate, object) => {
+                if (objects.indexOf(object) >= 0) {
+                  nextObjects.push(subject.id);
+                  callbackTriple(entityId, predicate, object);
                 }
-              }
+              });
             }
             if (nextObjects.length > 0) {
               getInverseTriples(nextObjects, predicates, callbackTriple, callbackDone, visitedObjects);
