@@ -1,7 +1,8 @@
 # Wikidata Lexeme Graph Builder
 
 A simple alternative to the [Wikidata Graph Builder](https://angryloki.github.io/wikidata-graph-builder/) that supports lexemes.
-This tool should become obsolete once [querying for lexicographical data](https://phabricator.wikimedia.org/T193645) is available.
+This tool was originally meant to become obsolete once [querying for lexicographical data](https://phabricator.wikimedia.org/T193645) was available,
+but reportedly people still find it to be useful these days.
 
 Examples:
 * [structure of the word <q lang="de" style="quotes: '„' '“'">satanarchäolügenialkohöllisch</q>](https://lucaswerkmeister.github.io/wikidata-lexeme-graph-builder/?subjects=L129&predicates=P5191)
