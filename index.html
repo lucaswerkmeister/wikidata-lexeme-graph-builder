@@ -38,6 +38,10 @@
       Link properties:
       <span id="predicatesLegend"><!-- populated by JS --></span>
     </p>
+    <div id="usageNotes" hidden>
+      <p>Hover the nodes and edges in the graph to see a tooltip with additional information.</p>
+      <p>You can click on the nodes to open the Lexeme page. Note that these will open in a new tab.</p>
+    </div>
     <a href="https://github.com/lucaswerkmeister/wikidata-lexeme-graph-builder/"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
     <svg>
       <defs>
@@ -55,7 +59,8 @@
             legend = document.getElementById("legend"),
             subjectsLegend = document.getElementById("subjectsLegend"),
             predicatesLegend = document.getElementById("predicatesLegend"),
-            perPropertyStyle = document.getElementById("style-per-property").sheet;
+            perPropertyStyle = document.getElementById("style-per-property").sheet,
+            usageNotes = document.getElementById("usageNotes");
 
       const entities = {}; // only for internal use by getEntities() and peekEntity()
       // `entities` maps entity IDs to either an entity object
@@ -152,6 +157,7 @@
         showLegend(subjects, predicates);
         getEntities(subjects.concat(predicates))
           .then(() => showLegend(subjects, predicates));
+        usageNotes.hidden = false;
       }
 
       function reset() {
@@ -237,7 +243,9 @@
         created.append("circle")
           .attr("r", 5);
         const createdLinks = created.append("a")
-              .attr("href", d => "http://www.wikidata.org/entity/" + d.entityId);
+              .attr("href", d => "http://www.wikidata.org/entity/" + d.entityId)
+              .attr("target", "_blank")
+              .attr("rel", "noopener");
         createdLinks.append("text")
           .attr("dx", 12)
           .attr("dy", ".35em")
