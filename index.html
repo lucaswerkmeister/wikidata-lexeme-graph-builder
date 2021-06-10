@@ -320,6 +320,11 @@
               response.entities[form.id] = form;
             }
           }
+          if ('senses' in entity) {
+            for (const sense of entity.senses) {
+              response.entities[sense.id] = sense;
+            }
+          }
         }
         return response;
       }
