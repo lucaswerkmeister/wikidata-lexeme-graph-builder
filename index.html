@@ -386,6 +386,13 @@
             for (const representation of Object.values(entity.representations)) {
               return representation;
             }
+          } else if ('glosses' in entity) {
+            if ('en' in entity.glosses) {
+              return entity.glosses.en;
+            }
+            for (const gloss of Object.values(entity.glosses)) {
+              return gloss;
+            }
           } else if ('labels' in entity) {
             if ('en' in entity.labels) {
               return entity.labels.en;
