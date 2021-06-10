@@ -187,7 +187,7 @@
       }
 
       function getTriples(subjects, predicates, callbackTriple, visitedSubjects = new Set()) {
-        return getEntities(getNewEntityIds(subjects, visitedSubjects)).then(response => {
+        return getEntities(getNewEntityIds(subjects, visitedSubjects)).then(addSubentities).then(response => {
           const nextSubjects = [];
           for (const entityId in response.entities) {
             const entity = response.entities[entityId];
