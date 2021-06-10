@@ -198,7 +198,7 @@
             });
           }
           if (nextSubjects.length > 0) {
-            return getTriples(nextSubjects, predicates, callbackTriple);
+            return getTriples(nextSubjects, predicates, callbackTriple, visitedSubjects);
           }
         });
       }
