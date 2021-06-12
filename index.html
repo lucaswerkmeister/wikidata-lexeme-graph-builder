@@ -23,15 +23,21 @@
   <body>
     <h1>Wikidata Lexeme Graph Builder</h1>
     <form id="form">
-      <label for="subjects">Root entities</label>
+      <label for="subjects">Root entities:</label>
       <input id="subjects" type="text" required pattern="(?:[QP][1-9][0-9]*|L[1-9][0-9]*(?:-F[1-9][0-9]*)?)(?:,(?:[QP][1-9][0-9]*|L[1-9][0-9]*(?:-F[1-9][0-9]*)?)*)*" placeholder="L88,L129">
-      <label for="predicates">Link properties</label>
+      <label for="predicates">Link properties:</label>
       <input id="predicates" type="text" required pattern="P[1-9][0-9]*(?:,P[1-9][0-9]*)*" placeholder="P5191">
       <button id="start">Start</button>
     </form>
     <noscript>
       <strong>This website requires JavaScript.</strong>
     </noscript>
+    <p id="legend" hidden>
+      Root entities:
+      <span id="subjectsLegend"><!-- populated by JS --></span>
+      Link properties:
+      <span id="predicatesLegend"><!-- populated by JS --></span>
+    </p>
     <a href="https://github.com/lucaswerkmeister/wikidata-lexeme-graph-builder/"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub"></a>
     <svg>
       <defs>
@@ -42,12 +48,18 @@
     </svg>
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script>
-      const entities = {},
-            width = Math.max(window.innerWidth - 200, 200),
+      const width = Math.max(window.innerWidth - 200, 200),
             height = Math.max(window.innerHeight - 200, 200),
             subjectsInput = document.getElementById("subjects"),
             predicatesInput = document.getElementById("predicates"),
+            legend = document.getElementById("legend"),
+            subjectsLegend = document.getElementById("subjectsLegend"),
+            predicatesLegend = document.getElementById("predicatesLegend"),
             perPropertyStyle = document.getElementById("style-per-property").sheet;
+
+      const entities = {}; // only for internal use by getEntities() and peekEntity()
+      // `entities` maps entity IDs to either an entity object
+      // or a promise that resolves when `entities` contains the entity object
 
       let force, svg, nodes, nodesById, links, node, link;
 
@@ -109,7 +121,12 @@
         if (predicates.length > 1) {
           const scale = d3.scale.category10();
           for (const predicate of predicates) {
-            perPropertyStyle.insertRule(`.link-${predicate} { stroke: ${scale(predicate)}; }`);
+            perPropertyStyle.insertRule(`
+              .link-${predicate} {
+                stroke: ${scale(predicate)};
+                color: ${scale(predicate)};
+              }
+            `);
           }
         }
 
@@ -131,6 +148,10 @@
             addTriple
           )
         ]).then(restart).catch(console.error);
+
+        showLegend(subjects, predicates);
+        getEntities(subjects.concat(predicates))
+          .then(() => showLegend(subjects, predicates));
       }
 
       function reset() {
@@ -138,6 +159,41 @@
         while (perPropertyStyle.cssRules.length) {
           perPropertyStyle.deleteRule(0);
         }
+      }
+
+      function showLegend(subjects, predicates) {
+        subjectsLegend.innerText = "";
+        let firstSubject = true;
+        for (const subject of subjects) {
+          if (!firstSubject) {
+            subjectsLegend.append(", ");
+          }
+          firstSubject = false;
+          subjectsLegend.append(makeEntityLink(subject));
+        }
+
+        predicatesLegend.innerText = "";
+        let firstPredicate = true;
+        for (const predicate of predicates) {
+          if (!firstPredicate) {
+            predicatesLegend.append(", ");
+          }
+          firstPredicate = false;
+          const predicateLink = makeEntityLink(predicate);
+          predicateLink.classList.add(`link-${predicate}`);
+          predicatesLegend.append(predicateLink);
+        }
+
+        legend.hidden = false;
+      }
+
+      function makeEntityLink(entityId) {
+        const link = document.createElement("a");
+        link.href = "http://www.wikidata.org/entity/" + entityId;
+        const term = getSomeTerm(entityId);
+        link.innerText = term.value;
+        link.lang = term.language;
+        return link;
       }
 
       function tick() {
@@ -329,29 +385,72 @@
         return response;
       }
 
+      /**
+       * Get the entity data for the given entity IDs.
+       *
+       * @return {Promise}
+       */
       function getEntities(entityIds) {
-        const unknownEntityIds = entityIds.filter(entityId => !(entityId in entities)),
-              fetches = [];
-        let someEntityIds;
-        while ((someEntityIds = unknownEntityIds.splice(0, 50)).length > 0) {
-          fetches.push(apiRequest(
-            'action=wbgetentities',
-            'ids=' + someEntityIds.join('|')
-          ));
+        // check which entities we need to fetch ourselves,
+        // and also which ones are already being fetched but we’ll need to wait for
+        const unknownEntityIds = [],
+              otherFetches = [];
+        for (const entityId of entityIds) {
+          if (entityId in entities) {
+            if (typeof entities[entityId].then === 'function') {
+              otherFetches.push(entities[entityId]);
+            }
+          } else {
+            unknownEntityIds.push(entityId);
+          }
         }
 
-        return Promise.all(fetches).then(responses => {
-          for (const response of responses.map(addSubentities)) {
+        // send our own fetches,
+        // and record them in `entities` so that other callers can wait for them
+        const ourFetches = [];
+        let someEntityIds;
+        while ((someEntityIds = unknownEntityIds.splice(0, 50)).length > 0) {
+          const fetch = apiRequest(
+            'action=wbgetentities',
+            'ids=' + someEntityIds.join('|')
+          ).then(response => {
+            response = addSubentities(response);
             for (const entityId in response.entities) {
               entities[entityId] = response.entities[entityId];
             }
+          });
+          ourFetches.push(fetch);
+          for (const entityId of someEntityIds) {
+            entities[entityId] = fetch;
           }
+        }
+
+        // wait for all the fetches (our own and others),
+        // and once they’re done (i.e. `entities` contains all the entities we wanted),
+        // construct our response (picking only the entities we wanted out of `entities`)
+        return Promise.all(ourFetches.concat(otherFetches)).then(() => {
           const requestedEntities = {};
           for (const entityId of entityIds) {
             requestedEntities[entityId] = entities[entityId];
           }
+
           return { entities: requestedEntities };
         });
+      }
+
+      /**
+       * Get an entity only if it has already been fetched.
+       *
+       * @return {?Object}
+       */
+      function peekEntity(entityId) {
+        if (entityId in entities) {
+          const entity = entities[entityId];
+          if (typeof entity.then !== 'function') {
+            return entity;
+          }
+        }
+        return null;
       }
 
       function apiRequest(...params) {
@@ -376,8 +475,8 @@
       }
 
       function getSomeTerm(entityId) {
-        if (entityId in entities) {
-          const entity = entities[entityId];
+        const entity = peekEntity(entityId);
+        if (entity !== null) {
           if ('lemmas' in entity) {
             for (const lemma of Object.values(entity.lemmas)) {
               return lemma;
