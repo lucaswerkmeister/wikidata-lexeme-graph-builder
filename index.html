@@ -230,27 +230,28 @@
 
         node = node.data(Object.values(nodes));
 
-        // create new <g>s for new nodes, with barebones <text>
+        // create new <g>s for new nodes, with barebones <text> and <title>
         const created = node.enter().append("g")
               .attr("class", "node")
               .call(force.drag);
         created.append("circle")
           .attr("r", 5);
-        created.append("a")
-          .attr("href", d => "http://www.wikidata.org/entity/" + d.entityId)
-          .append("text")
+        const createdLinks = created.append("a")
+              .attr("href", d => "http://www.wikidata.org/entity/" + d.entityId);
+        createdLinks.append("text")
           .attr("dx", 12)
           .attr("dy", ".35em")
           .text(d => d.entityId);
+        createdLinks.append("title")
+          .text(d => d.entityId);
 
-        // update <text> and create <title> for all nodes
+        // update <text> and <title> for all nodes
         // (entity may not have been loaded yet when node was created)
-        // (we have to recreate the <title> because .text() replaces children)
-        node.each(d => d.term = getSomeTerm(d.entityId))
-          .select("text")
+        node.each(d => d.term = getSomeTerm(d.entityId));
+        node.select("text")
           .attr("xml:lang", d => d.term.language)
-          .text(d => d.term.value)
-          .append("title")
+          .text(d => d.term.value);
+        node.select("title")
           .text(d => `${d.entityId} - ${d.term.language}`);
 
         force.start();
