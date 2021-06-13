@@ -215,25 +215,39 @@
       function restart() {
         link = link.data(links);
 
+        // create new <line>s for new links, with barebones <title>
         link.enter().insert("line", ".node")
           .attr("class", d => `link link-${d.propertyId}`)
           .append("title")
           .text(d => d.propertyId);
 
+        // update <title> for all links
+        // (entity may not have been loaded yet when link was created)
+        link.select("title")
+          .each(d => d.term = getSomeTerm(d.propertyId))
+          .attr("xml:lang", d => d.term.language)
+          .text(d => d.term.value);
+
         node = node.data(Object.values(nodes));
 
-        node.enter().append("g")
-          .attr("class", "node")
-          .call(force.drag);
-        node.selectAll("*").remove();
-        node.append("circle")
+        // create new <g>s for new nodes, with barebones <text>
+        const created = node.enter().append("g")
+              .attr("class", "node")
+              .call(force.drag);
+        created.append("circle")
           .attr("r", 5);
-        node.each(d => d.term = getSomeTerm(d.entityId));
-        node.append("a")
+        created.append("a")
           .attr("href", d => "http://www.wikidata.org/entity/" + d.entityId)
           .append("text")
           .attr("dx", 12)
           .attr("dy", ".35em")
+          .text(d => d.entityId);
+
+        // update <text> and create <title> for all nodes
+        // (entity may not have been loaded yet when node was created)
+        // (we have to recreate the <title> because .text() replaces children)
+        node.each(d => d.term = getSomeTerm(d.entityId))
+          .select("text")
           .attr("xml:lang", d => d.term.language)
           .text(d => d.term.value)
           .append("title")
