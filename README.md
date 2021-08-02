@@ -6,7 +6,7 @@ but reportedly people still find it to be useful these days.
 
 Examples:
 * [structure of the word <q lang="de" style="quotes: '„' '“'">satanarchäolügenialkohöllisch</q>](https://lucaswerkmeister.github.io/wikidata-lexeme-graph-builder/?subjects=L129&predicates=P5191)
-* [words derived from Proto-Indo-European <q lang="mis-x-Q37178">*uber</q>](https://lucaswerkmeister.github.io/wikidata-lexeme-graph-builder/?subjects=L2087&predicates=P5191)
+* [words derived from Proto-Indo-European <q lang="mis-x-Q37178">*wódr̥</q>](https://lucaswerkmeister.github.io/wikidata-lexeme-graph-builder/?subjects=L2087&predicates=P5191)
 * [structure of the <q>Aberystwyth</q> toponym](https://lucaswerkmeister.github.io/wikidata-lexeme-graph-builder/?subjects=L4730&predicates=P5191%2CP5238)
 * [translations and synonyms of the Cape Verdean Creole <q lang="kea">odju</q>](https://lucaswerkmeister.github.io/wikidata-lexeme-graph-builder/?subjects=L501298&predicates=P5972%2CP5973)
 
