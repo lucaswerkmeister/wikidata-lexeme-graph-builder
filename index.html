@@ -307,8 +307,10 @@
       }
 
       function getInverseTriples(objects, predicates, callbackTriple, visitedObjects = new Set()) {
-        return getBacklinks(objects).then(entityIds => {
-          return getEntities(entityIds).then(addSubentities).then(response => {
+        return getBacklinks(objects)
+          .then(getEntities)
+          .then(addSubentities)
+          .then(response => {
             const nextObjects = [];
             for (const entityId in response.entities) {
               const subject = response.entities[entityId];
@@ -323,7 +325,6 @@
               return getInverseTriples(nextObjects, predicates, callbackTriple, visitedObjects);
             }
           });
-        });
       }
 
       function getBacklinks(entityIds) {
@@ -485,16 +486,16 @@
               params.map(s => s.replace(/#/g, encodeURIComponent)).join('&') + '&' +
               'origin=*&' +
               'format=json&formatversion=2';
-        return fetch(url, init).then(response => response.json().then(body => {
-            if ('error' in body) {
-              if (body.error.code === 'maxlag' && response.headers.has('Retry-After')) {
-                setTimeout(() => apiRequest.apply(this, params), response.headers.get('Retry-After') * 1000);
-              } else {
-                throw body.error;
-              }
+        return fetch(url, init).then(response => response.json()).then(body => {
+          if ('error' in body) {
+            if (body.error.code === 'maxlag' && response.headers.has('Retry-After')) {
+              setTimeout(() => apiRequest.apply(this, params), response.headers.get('Retry-After') * 1000);
+            } else {
+              throw body.error;
             }
-            return body;
-          }));
+          }
+          return body;
+        });
       }
 
       function getSomeTerm(entityId) {
