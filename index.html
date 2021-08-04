@@ -199,8 +199,19 @@
         const link = document.createElement("a");
         link.href = "http://www.wikidata.org/entity/" + entityId;
         const term = getSomeTerm(entityId);
-        link.innerText = term.value;
-        link.lang = term.language;
+        const outerTerm = getOuterTerm(entityId);
+        if (outerTerm) {
+          const span = document.createElement("span");
+          span.innerText = term.value;
+          span.lang = term.language;
+          const outerSpan = document.createElement("span");
+          outerSpan.innerText = outerTerm.value;
+          outerSpan.lang = outerTerm.language;
+          link.append(outerSpan, " (", span, ")");
+        } else {
+          link.innerText = term.value;
+          link.lang = term.language;
+        }
         return link;
       }
 
@@ -238,7 +249,8 @@
 
         node = node.data(Object.values(nodes));
 
-        // create new <g>s for new nodes, with barebones <text> and <title>
+        // create new <g>s for new nodes, with barebones <text> and <title>,
+        // and <tspan>s in the <text> for nodes with outer term (senses)
         const created = node.enter().append("g")
               .attr("class", "node")
               .call(force.drag);
@@ -246,21 +258,45 @@
           .attr("r", 5);
         const createdLinks = created.append("a")
               .attr("href", d => "http://www.wikidata.org/entity/" + d.entityId);
-        createdLinks.append("text")
-          .attr("dx", 12)
-          .attr("dy", ".35em")
+        const createdTexts = createdLinks.append("text")
+              .attr("dx", 12)
+              .attr("dy", ".35em");
+        // without outer term: <text> becomes .term
+        createdTexts.filter(d => !hasOuterTerm(d.entityId))
+          .attr("class", "term")
           .text(d => d.entityId);
+        // with outer term: <text> gains <tspan>s with .term and .outer-term
+        const createdTextsWithOuterTerm = createdTexts.filter(d => hasOuterTerm(d.entityId));
+        createdTextsWithOuterTerm.append("tspan")
+          .attr("class", "outer-term");
+        createdTextsWithOuterTerm.append(d => document.createTextNode(" ("));
+        createdTextsWithOuterTerm.append("tspan")
+          .attr("class", "term");
+        createdTextsWithOuterTerm.append(d => document.createTextNode(")"));
+        // and <title>
         createdLinks.append("title")
           .text(d => d.entityId);
 
-        // update <text> and <title> for all nodes
+        // update <text> (or <tspan>) and <title> for all nodes
         // (entity may not have been loaded yet when node was created)
-        node.each(d => d.term = getSomeTerm(d.entityId));
-        node.select("text")
+        node.each(d => {
+          d.term = getSomeTerm(d.entityId);
+          d.outerTerm = getOuterTerm(d.entityId);
+        });
+        node.select(".term")
           .attr("xml:lang", d => d.term.language)
           .text(d => d.term.value);
+        node.select(".outer-term")
+          .attr("xml:lang", d => d.outerTerm.language)
+          .text(d => d.outerTerm.value);
         node.select("title")
-          .text(d => `${d.entityId} - ${d.term.language}`);
+          .text(d => {
+            if (d.outerTerm) {
+              return `${d.entityId} - ${d.outerTerm.language} (${d.term.language})`;
+            } else {
+              return `${d.entityId} - ${d.term.language}`;
+            }
+          });
 
         force.start();
       }
@@ -526,6 +562,19 @@
           }
         }
         return { language: 'und', value: entityId };
+      }
+
+      function getOuterTerm(entityId) {
+        const senseIdMatch = /^(L[1-9][0-9]*)-S[1-9][0-9]*$/.exec(entityId);
+        if (senseIdMatch !== null) {
+          const lexemeId = senseIdMatch[1];
+          return getSomeTerm(lexemeId);
+        }
+        return null;
+      }
+
+      function hasOuterTerm(entityId) {
+        return /^(?:L[1-9][0-9]*)-S[1-9][0-9]*$/.test(entityId);
       }
 
       function getNode(entityId) {
