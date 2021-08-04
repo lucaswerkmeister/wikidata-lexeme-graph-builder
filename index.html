@@ -451,11 +451,14 @@
        * @return {Promise}
        */
       function getEntities(entityIds) {
+        // fetch whole lexeme for senses (see getOuterTerm)
+        const entityIdsToFetch = entityIds
+              .map(entityId => entityId.replace(/^(L[1-9][0-9]*)-S[1-9][0-9]*$/, '$1'));
         // check which entities we need to fetch ourselves,
         // and also which ones are already being fetched but we’ll need to wait for
         const unknownEntityIds = [],
               otherFetches = [];
-        for (const entityId of entityIds) {
+        for (const entityId of entityIdsToFetch) {
           if (entityId in entities) {
             if (typeof entities[entityId].then === 'function') {
               otherFetches.push(entities[entityId]);
