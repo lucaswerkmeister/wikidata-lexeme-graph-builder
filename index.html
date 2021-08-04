@@ -456,8 +456,8 @@
               .map(entityId => entityId.replace(/^(L[1-9][0-9]*)-S[1-9][0-9]*$/, '$1'));
         // check which entities we need to fetch ourselves,
         // and also which ones are already being fetched but we’ll need to wait for
-        const unknownEntityIds = [],
-              otherFetches = [];
+        let unknownEntityIds = [];
+        const otherFetches = [];
         for (const entityId of entityIdsToFetch) {
           if (entityId in entities) {
             if (typeof entities[entityId].then === 'function') {
@@ -467,6 +467,7 @@
             unknownEntityIds.push(entityId);
           }
         }
+        unknownEntityIds = [...new Set(unknownEntityIds)];
 
         // send our own fetches,
         // and record them in `entities` so that other callers can wait for them
