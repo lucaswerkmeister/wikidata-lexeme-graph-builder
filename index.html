@@ -573,6 +573,9 @@
               return gloss;
             }
           } else if ('labels' in entity) {
+            if ('mul' in entity.labels) {
+              return entity.labels.mul;
+            }
             if ('en' in entity.labels) {
               return entity.labels.en;
             }
