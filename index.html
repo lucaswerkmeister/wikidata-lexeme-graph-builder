@@ -86,6 +86,12 @@
         } else if (params.has('predicate')) { // backwards compatibility
           predicatesInput.value = params.get('predicate');
         }
+        d3.select("svg")
+          .call(d3.behavior.zoom().on("zoom", function () {
+            if (svgG) {
+              svgG.attr("transform", `translate(${d3.event.translate}) scale(${d3.event.scale})`);
+            }
+          }));
         if (subjectsInput.value && predicatesInput.value) {
           onSubmit();
         }
@@ -117,13 +123,9 @@
           .charge(-600)
           .on("tick", tick);
 
-        svgG = d3.select("svg")
-          .call(d3.behavior.zoom().on("zoom", function () {
-            svgG.attr("transform", `translate(${d3.event.translate}) scale(${d3.event.scale})`);
-          }))
-          .append("g");
-
         reset();
+
+        svgG = d3.select("svg").append("g");
 
         svgG.append("rect")
           .attr("width", width)
@@ -166,8 +168,10 @@
       }
 
       function reset() {
-        svgG.selectAll("rect, .node, .link").remove();
-        svgG.attr("transform", null);
+        if (svgG) {
+          svgG.remove();
+          svgG = undefined;
+        }
         while (perPropertyStyle.cssRules.length) {
           perPropertyStyle.deleteRule(0);
         }
