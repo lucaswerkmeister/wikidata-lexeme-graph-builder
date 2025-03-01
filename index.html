@@ -69,7 +69,7 @@
       // `entities` maps entity IDs to either an entity object
       // or a promise that resolves when `entities` contains the entity object
 
-      let force, svg, nodes, nodesById, links, node, link;
+      let force, svgG, nodes, nodesById, links, node, link;
 
       document.getElementById("form").addEventListener("submit", onSubmit);
 
@@ -116,13 +116,17 @@
           .charge(-600)
           .on("tick", tick);
 
-        svg = d3.select("svg")
-            .attr("width", width)
-          .attr("height", height);
+        svgG = d3.select("svg")
+          .attr("width", width)
+          .attr("height", height)
+          .call(d3.behavior.zoom().on("zoom", function () {
+            svgG.attr("transform", `translate(${d3.event.translate}) scale(${d3.event.scale})`);
+          }))
+          .append("g");
 
         reset();
 
-        svg.append("rect")
+        svgG.append("rect")
           .attr("width", width)
           .attr("height", height);
 
@@ -141,8 +145,8 @@
         nodes = force.nodes();
         nodesById = {};
         links = force.links();
-        node = svg.selectAll(".node");
-        link = svg.selectAll(".link");
+        node = svgG.selectAll(".node");
+        link = svgG.selectAll(".link");
 
         Promise.all([
           getTriples(
@@ -163,7 +167,8 @@
       }
 
       function reset() {
-        svg.selectAll("rect, .node, .link").remove();
+        svgG.selectAll("rect, .node, .link").remove();
+        svgG.attr("transform", null);
         while (perPropertyStyle.cssRules.length) {
           perPropertyStyle.deleteRule(0);
         }
