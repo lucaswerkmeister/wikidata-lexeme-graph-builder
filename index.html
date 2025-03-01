@@ -122,6 +122,9 @@
           .linkDistance(70)
           .charge(-600)
           .on("tick", tick);
+        force.drag().on("dragstart", function () {
+          d3.event.sourceEvent.stopPropagation();
+        });
 
         reset();
 
