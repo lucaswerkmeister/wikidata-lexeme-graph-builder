@@ -30,6 +30,11 @@
   </head>
   <body>
     <h1>Wikidata Lexeme Graph Builder</h1>
+    <p>
+      A simple graph builder for <a href="https://www.wikidata.org/wiki/Special:MyLanguage/Wikidata:Lexicographical_data">Wikidata Lexemes</a> and other entities (Items etc. are also supported).
+      Select a set of root entities and link properties, and the tool will show all the other entities reachable from those entities via those properties, in both directions.
+      (See also the <a href="https://angryloki.github.io/wikidata-graph-builder/">Wikidata Graph Builder</a>.)
+    </p>
     <form id="form">
       <label for="subjects">Root entities:</label>
       <input id="subjects" type="text" required pattern="(?:[QP][1-9][0-9]*|L[1-9][0-9]*(?:-[FS][1-9][0-9]*)?)(?:,(?:[QP][1-9][0-9]*|L[1-9][0-9]*(?:-[FS][1-9][0-9]*)?)*)*" placeholder="L88,L129">
@@ -47,7 +52,7 @@
       <span id="predicatesLegend"><!-- populated by JS --></span>
     </p>
     <a href="https://github.com/lucaswerkmeister/wikidata-lexeme-graph-builder/"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://github.com/usecue/fork-me-on-github-svg-ribbons/raw/d01e7778ad/images/forkme_right_red_aa0000.svg" alt="Fork me on GitHub"></a>
-    <svg id="svg" width="100%" height="calc(100vh - 200px)">
+    <svg id="svg" width="100%" height="calc(100vh - 250px)">
       <defs>
         <marker id="arrow" viewBox="0 0 2 2" refX="3" refY="1" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
           <path d="M 0 0 L 2 1 L 0 2 z"/>
